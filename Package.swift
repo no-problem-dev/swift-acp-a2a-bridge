@@ -14,8 +14,8 @@ let package = Package(
         .library(name: "ACPA2ABridge", targets: ["ACPA2ABridge"]),
     ],
     dependencies: [
-        .package(path: "../swift-acp"),
-        .package(path: "../swift-a2a"),
+        .package(url: "https://github.com/no-problem-dev/swift-acp.git", from: "0.1.0"),
+        .package(url: "https://github.com/no-problem-dev/swift-a2a.git", from: "0.6.3"),
     ],
     targets: [
         .target(
