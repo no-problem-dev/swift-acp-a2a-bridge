@@ -29,6 +29,11 @@ public final class A2AAgentBridge: ACPAgent {
         self.callContext = callContext
     }
 
+    /// Converts an ACP prompt into an A2A `Message`, streams the handler's response,
+    /// and maps each `StreamResponse` back onto the ACP `session/update` channel via
+    /// the client. Returns when the A2A task reaches a terminal state; the terminal
+    /// `TaskState` determines the `StopReason` (`.endTurn` for completed, `.cancelled`
+    /// for canceled, `.refusal` for rejected, error for failed).
     public func prompt(_ request: PromptRequest) async throws -> PromptResponse {
         let message = Message(
             messageId: MessageID(UUID().uuidString),
@@ -69,18 +74,20 @@ public final class A2AAgentBridge: ACPAgent {
 
     // MARK: - Minimal session lifecycle
 
+    /// Returns `protocolVersion: .v1` with an empty capability set.
     public func initialize(_ request: InitializeRequest) async throws -> InitializeResponse {
         InitializeResponse(protocolVersion: .v1, agentCapabilities: .init())
     }
 
+    /// Creates a new session backed by a UUID; session state is not persisted.
     public func newSession(_ request: NewSessionRequest) async throws -> NewSessionResponse {
         NewSessionResponse(sessionId: SessionId(UUID().uuidString))
     }
 
-    public func cancel(_ notification: CancelNotification) async throws {
-        // Best-effort: a future revision tracks contextId→taskId to cancel the
-        // in-flight A2A task. The streamed turn ends when the handler closes.
-    }
+    /// Best-effort cancellation: a future revision will track `contextId→taskId` to
+    /// cancel the in-flight A2A task. For now the streamed turn ends when the
+    /// handler closes naturally.
+    public func cancel(_ notification: CancelNotification) async throws {}
 
     // MARK: - Unsupported by this bridge
 
@@ -139,7 +146,7 @@ public final class A2AAgentBridge: ACPAgent {
 
 extension A2AAgentBridge {
     /// ACP prompt content → A2A message part.
-    static func part(from block: ContentBlock) -> Part? {
+    private static func part(from block: ContentBlock) -> Part? {
         switch block {
         case let .text(text):
             return .text(text.text)
@@ -171,7 +178,7 @@ extension A2AAgentBridge {
     }
 
     /// A2A streamed part → ACP content block (for an `agent_message_chunk`).
-    static func contentBlock(from part: Part) -> ContentBlock? {
+    private static func contentBlock(from part: Part) -> ContentBlock? {
         switch part.content {
         case let .text(text):
             return .text(TextContent(text: text))
@@ -188,7 +195,7 @@ extension A2AAgentBridge {
     }
 
     /// A2A terminal task state → ACP stop reason. `.failed` surfaces as an error.
-    static func stopReason(for state: TaskState) throws -> StopReason {
+    private static func stopReason(for state: TaskState) throws -> StopReason {
         switch state {
         case .completed: return .endTurn
         case .canceled: return .cancelled
