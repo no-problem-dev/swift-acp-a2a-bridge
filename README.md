@@ -1,3 +1,5 @@
+English | [日本語](./README.ja.md)
+
 # swift-acp-a2a-bridge
 
 Exposes a [swift-a2a](https://github.com/no-problem-dev/swift-a2a) agent as an
@@ -22,6 +24,8 @@ This is the **control/progress plane** of the three orthogonal planes:
    `session/update` reported through the client — the host's progress channel.
 4. The A2A task's terminal `TaskState` becomes the prompt's `StopReason`.
 
+## Quick Start
+
 ```swift
 let connection = InProcessConnection { client in
     A2AAgentBridge(client: client, handler: myA2ARequestHandler)
@@ -34,5 +38,32 @@ The `ACPA2ABridgeTests` suite proves the full three-layer flow end-to-end
 (ACP host → bridge → A2A agent → streamed artifact → ACP session update),
 in-process with no serialization.
 
-Depends on `swift-acp` (`ACPCore`/`ACPAgent`/`ACPClient`) and `swift-a2a`
-(`A2ACore`/`A2AServer`). Neither foundation depends on this bridge.
+## Installation
+
+Add the package to your `Package.swift`:
+
+```swift
+.package(url: "https://github.com/no-problem-dev/swift-acp-a2a-bridge.git", from: "0.1.0"),
+```
+
+Then add `ACPA2ABridge` to your target's dependencies:
+
+```swift
+.target(
+    name: "YourTarget",
+    dependencies: [
+        .product(name: "ACPA2ABridge", package: "swift-acp-a2a-bridge"),
+    ]
+)
+```
+
+## Dependencies
+
+- [swift-acp](https://github.com/no-problem-dev/swift-acp) — `ACPCore`, `ACPAgent`, `ACPClient`
+- [swift-a2a](https://github.com/no-problem-dev/swift-a2a) — `A2ACore`, `A2AServer`
+
+Neither foundation depends on this bridge.
+
+## License
+
+MIT
