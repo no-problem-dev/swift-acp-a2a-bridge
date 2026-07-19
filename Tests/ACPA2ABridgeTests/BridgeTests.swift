@@ -12,7 +12,7 @@ private struct EchoExecutor: AgentExecutor {
         let updater = TaskUpdater(eventQueue: eventQueue, taskId: context.taskId, contextId: context.contextId)
         try await updater.submit()
         try await updater.startWork()
-        await updater.addArtifact([.text("echo: \(context.getUserInput())")], name: "echo")
+        await updater.addArtifact([.text("echo: \(context.userInput())")], name: "echo")
         try await updater.complete()
     }
 
