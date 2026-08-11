@@ -2,6 +2,8 @@
 
 swift-a2a エージェントを ACP エージェントとして公開するブリッジモジュール。
 
+> **非公式。** Agent Client Protocol と A2A プロトコルの作者とは何の関係もなく、承認も受けていない。土台にしているのは両プロトコルの非公式な Swift 実装である。どちらの仕様に準拠することも、このプロジェクトの目標ではない。
+
 ## Overview
 
 `ACPA2ABridge` は ACP（Agent Communication Protocol）と A2A（Agent-to-Agent）プロトコルを接続するアダプター層。

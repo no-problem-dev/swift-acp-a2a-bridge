@@ -6,6 +6,8 @@
 [ACP](https://agentclientprotocol.com) エージェントとして公開するブリッジ。
 ACP ホストが単一の垂直境界を通してマルチエージェント A2A グラフを制御するための接続層。
 
+> **非公式。** Agent Client Protocol と A2A プロトコルの作者とは何の関係もなく、承認も受けていない。土台にしているのは両プロトコルの非公式な Swift 実装である。どちらの仕様に準拠することも、このプロジェクトの目標ではない。
+
 このパッケージは 3 つの直交する平面のうち**制御/進捗平面**を担う:
 
 | 平面 | プロトコル | 役割 |
@@ -34,7 +36,7 @@ Task { for await update in connection.updates { render(update) } }
 _ = try await connection.agent.prompt(promptRequest)
 ```
 
-`ACPA2ABridgeTests` スイートが ACP ホスト → ブリッジ → A2A エージェント → ストリーミングアーティファクト → ACP セッション更新という 3 層フロー全体をインプロセスで検証している。
+`ACPA2ABridgeTests` スイートは ACP ホスト → ブリッジ → A2A エージェント → ストリーミングアーティファクト → ACP セッション更新という 3 層フローをインプロセスで動かしている。直列化は一切通らないので、ワイヤー上の相互運用性については何も言っていない。
 
 ## インストール
 

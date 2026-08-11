@@ -6,6 +6,8 @@ Exposes a [swift-a2a](https://github.com/no-problem-dev/swift-a2a) agent as an
 [ACP](https://agentclientprotocol.com) agent — the connection layer that lets an
 ACP host drive a multi-agent A2A graph behind a single vertical boundary.
 
+> **Unofficial.** Not affiliated with or endorsed by the authors of the Agent Client Protocol or the A2A protocol, and built on unofficial Swift implementations of both. Conforming to either specification is not a goal of this project.
+
 This is the **control/progress plane** of the three orthogonal planes:
 
 | Plane | Protocol | Role |
@@ -34,9 +36,9 @@ Task { for await update in connection.updates { render(update) } }
 _ = try await connection.agent.prompt(promptRequest)
 ```
 
-The `ACPA2ABridgeTests` suite proves the full three-layer flow end-to-end
-(ACP host → bridge → A2A agent → streamed artifact → ACP session update),
-in-process with no serialization.
+The `ACPA2ABridgeTests` suite exercises the three-layer flow
+(ACP host → bridge → A2A agent → streamed artifact → ACP session update)
+in-process, with no serialization — so it says nothing about wire interoperability.
 
 ## Installation
 
