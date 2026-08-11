@@ -43,7 +43,7 @@ _ = try await connection.agent.prompt(promptRequest)
 `Package.swift` にパッケージを追加する:
 
 ```swift
-.package(url: "https://github.com/no-problem-dev/swift-acp-a2a-bridge.git", from: "0.1.0"),
+.package(url: "https://github.com/no-problem-dev/swift-acp-a2a-bridge.git", .upToNextMinor(from: "0.1.0")),
 ```
 
 ターゲットの依存関係に `ACPA2ABridge` を追加する:

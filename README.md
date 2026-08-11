@@ -45,7 +45,7 @@ in-process, with no serialization — so it says nothing about wire interoperabi
 Add the package to your `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/no-problem-dev/swift-acp-a2a-bridge.git", from: "0.1.0"),
+.package(url: "https://github.com/no-problem-dev/swift-acp-a2a-bridge.git", .upToNextMinor(from: "0.1.0")),
 ```
 
 Then add `ACPA2ABridge` to your target's dependencies:
