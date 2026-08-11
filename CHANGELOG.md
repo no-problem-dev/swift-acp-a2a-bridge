@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-11
+
 ### Changed
 
 - The README links to the published DocC site. The documentation had been building and deploying
