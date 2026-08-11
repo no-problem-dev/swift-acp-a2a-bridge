@@ -59,6 +59,11 @@ Then add `ACPA2ABridge` to your target's dependencies:
 )
 ```
 
+## Documentation
+
+The API reference lives on
+[GitHub Pages](https://no-problem-dev.github.io/swift-acp-a2a-bridge/documentation/acpa2abridge/).
+
 ## Dependencies
 
 - [swift-acp](https://github.com/no-problem-dev/swift-acp) — `ACPCore`, `ACPAgent`, `ACPClient`

@@ -5,25 +5,27 @@ import ACPClient
 import A2ACore
 import A2AServer
 
-/// swift-a2a の `RequestHandler` を `ACPAgent` として提示するブリッジ。
+/// A bridge that presents a swift-a2a `RequestHandler` as an `ACPAgent`.
 ///
-/// `DefaultRequestHandler` に `AgentExecutor` を渡したものを典型的なハンドラーとして受け取り、
-/// ACP ホストからは単一エージェントとして見える。背後では A2A グラフが動作できる。
+/// The typical handler it takes is a `DefaultRequestHandler` given an `AgentExecutor`. To an ACP
+/// host it looks like a single agent, while an A2A graph can be running behind it.
 ///
-/// `prompt` が呼ばれると、ACP プロンプトを A2A `Message` に変換してハンドラーの
-/// ストリーミング送信を駆動し、各 `StreamResponse` を ACP `session/update` 通知として
-/// クライアントに逐次報告する。A2A タスクの終端状態が `PromptResponse` の `StopReason` になる。
+/// When `prompt` is called, it converts the ACP prompt into an A2A `Message`, drives the handler's
+/// streaming send, and reports each `StreamResponse` to the client as it arrives, as an ACP
+/// `session/update` notification. The terminal state of the A2A task becomes the `StopReason` of
+/// the `PromptResponse`.
 public final class A2AAgentBridge: ACPAgent {
     private let client: any ACPClient
     private let handler: any RequestHandler
     private let callContext: ServerCallContext
 
-    /// ブリッジを生成する。
+    /// Creates the bridge.
     ///
     /// - Parameters:
-    ///   - client: ACP `session/update` 通知の送信先となるクライアント。
-    ///   - handler: 実処理を担う swift-a2a の `RequestHandler`（通常は `AgentExecutor` を包む `DefaultRequestHandler`）。
-    ///   - callContext: ハンドラーへ渡す A2A サーバー呼び出しコンテキスト。省略時は既定値を使う。
+    ///   - client: The client that ACP `session/update` notifications are sent to.
+    ///   - handler: The swift-a2a `RequestHandler` that does the actual work (usually a
+    ///     `DefaultRequestHandler` wrapping an `AgentExecutor`).
+    ///   - callContext: The A2A server call context handed to the handler. Omitted, it uses the default.
     public init(
         client: any ACPClient,
         handler: any RequestHandler,
@@ -34,14 +36,15 @@ public final class A2AAgentBridge: ACPAgent {
         self.callContext = callContext
     }
 
-    /// ACP プロンプトを A2A `Message` に変換してハンドラーをストリーミング実行し、ACP 応答を返す。
+    /// Converts the ACP prompt into an A2A `Message`, runs the handler as a stream, and returns the
+    /// ACP response.
     ///
-    /// ストリームのイベントは ACP `session/update`（`agentMessageChunk`）として選択的に送信する。
-    /// artifact と message は無条件に送信し、statusUpdate はメッセージを伴うときのみ送信する。
-    /// task は終端状態の検出にのみ使い、クライアントへは送信しない。
-    /// A2A タスクが終端状態に達した時点で処理を終える。終端 `TaskState` と `StopReason` の対応:
-    /// `.completed` → `.endTurn`、`.canceled` → `.cancelled`、`.rejected` → `.refusal`、
-    /// `.failed` → `RPCError`（`.internalError`）を投げる。
+    /// Stream events are sent selectively as ACP `session/update` (`agentMessageChunk`). Artifacts
+    /// and messages are sent unconditionally; a statusUpdate is sent only when it carries a message.
+    /// A task is used only to detect the terminal state and is never sent to the client.
+    /// Processing ends the moment the A2A task reaches a terminal state. Terminal `TaskState` maps
+    /// to `StopReason` as: `.completed` → `.endTurn`, `.canceled` → `.cancelled`,
+    /// `.rejected` → `.refusal`, and `.failed` → throws an `RPCError` (`.internalError`).
     public func prompt(_ request: PromptRequest) async throws -> PromptResponse {
         let message = Message(
             messageId: MessageID(UUID().uuidString),
@@ -82,20 +85,20 @@ public final class A2AAgentBridge: ACPAgent {
 
     // MARK: - Minimal session lifecycle
 
-    /// `protocolVersion: .v1` と空の `AgentCapabilities` で応答する。
+    /// Responds with `protocolVersion: .v1` and an empty `AgentCapabilities`.
     public func initialize(_ request: InitializeRequest) async throws -> InitializeResponse {
         InitializeResponse(protocolVersion: .v1, agentCapabilities: .init())
     }
 
-    /// UUID を新規生成してセッション ID とする。セッション状態は保持しない。
+    /// Generates a fresh UUID and uses it as the session ID. No session state is kept.
     public func newSession(_ request: NewSessionRequest) async throws -> NewSessionResponse {
         NewSessionResponse(sessionId: SessionId(UUID().uuidString))
     }
 
-    /// ベストエフォートのキャンセル。現バージョンはノーオペレーション。
+    /// Best-effort cancellation. In the current version this is a no-op.
     ///
-    /// 将来的には `contextId` → `taskId` を追跡してインフライトの A2A タスクをキャンセルする予定。
-    /// 現時点ではストリームはハンドラーが自然に閉じた時点で終了する。
+    /// The plan is to track `contextId` → `taskId` and cancel the in-flight A2A task. For now the
+    /// stream ends when the handler closes it on its own.
     public func cancel(_ notification: CancelNotification) async throws {}
 
     // MARK: - Unsupported by this bridge
@@ -132,7 +135,8 @@ public final class A2AAgentBridge: ACPAgent {
     public func ext(_ request: ExtRequest) async throws -> ExtResponse {
         throw unsupported(request.method)
     }
-    /// ACP の拡張通知。本ブリッジでは何もせず無視する（他の未対応メソッドと異なりエラーは投げない）。
+    /// An ACP extension notification. This bridge does nothing and ignores it (unlike the other
+    /// unsupported methods, it does not throw).
     public func extNotification(_ notification: ExtNotification) async throws {}
 
     private func unsupported(_ method: String) -> RPCError {
@@ -155,7 +159,7 @@ public final class A2AAgentBridge: ACPAgent {
 // MARK: - Conversions
 
 extension A2AAgentBridge {
-    /// ACP の `ContentBlock` を A2A の `Part` に変換する。変換不可の場合は `nil` を返す。
+    /// Converts an ACP `ContentBlock` into an A2A `Part`. Returns `nil` when it cannot be converted.
     private static func part(from block: ContentBlock) -> Part? {
         switch block {
         case let .text(text):
@@ -187,7 +191,8 @@ extension A2AAgentBridge {
         }
     }
 
-    /// A2A の `Part` を ACP の `ContentBlock`（`agent_message_chunk` 用）に変換する。変換不可の場合は `nil` を返す。
+    /// Converts an A2A `Part` into an ACP `ContentBlock` (for `agent_message_chunk`). Returns `nil`
+    /// when it cannot be converted.
     private static func contentBlock(from part: Part) -> ContentBlock? {
         switch part.content {
         case let .text(text):
@@ -204,7 +209,7 @@ extension A2AAgentBridge {
         }
     }
 
-    /// A2A の終端 `TaskState` を ACP の `StopReason` に変換する。`.failed` は `RPCError` を投げる。
+    /// Converts a terminal A2A `TaskState` into an ACP `StopReason`. `.failed` throws an `RPCError`.
     private static func stopReason(for state: TaskState) throws -> StopReason {
         switch state {
         case .completed: return .endTurn

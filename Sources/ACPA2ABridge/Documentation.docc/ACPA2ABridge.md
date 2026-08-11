@@ -1,31 +1,31 @@
 # ``ACPA2ABridge``
 
-swift-a2a エージェントを ACP エージェントとして公開するブリッジモジュール。
+A bridge module that publishes a swift-a2a agent as an ACP agent.
 
-> **非公式。** Agent Client Protocol と A2A プロトコルの作者とは何の関係もなく、承認も受けていない。土台にしているのは両プロトコルの非公式な Swift 実装である。どちらの仕様に準拠することも、このプロジェクトの目標ではない。
+> **Unofficial.** Not affiliated with or endorsed by the authors of the Agent Client Protocol or the A2A protocol, and built on unofficial Swift implementations of both. Conforming to either specification is not a goal of this project.
 
 ## Overview
 
-`ACPA2ABridge` は ACP（Agent Communication Protocol）と A2A（Agent-to-Agent）プロトコルを接続するアダプター層。
-`A2AAgentBridge` を使うだけで、任意の `RequestHandler`（通常は `DefaultRequestHandler` に `AgentExecutor` を渡したもの）を ACP ホストに `ACPAgent` として提示できる。
+`ACPA2ABridge` is the adapter layer that connects ACP (Agent Communication Protocol) and the A2A (Agent-to-Agent) protocol.
+`A2AAgentBridge` alone is enough to present any `RequestHandler` (usually a `DefaultRequestHandler` given an `AgentExecutor`) to an ACP host as an `ACPAgent`.
 
-ブリッジは次の変換を担う。
+The bridge is responsible for these conversions.
 
-- **ACP → A2A**: ACP の `PromptRequest`（`ContentBlock` のリスト）を A2A の `Message` に変換し、
-  ハンドラーの `onMessageSendStream` を呼び出す。
-- **A2A → ACP**: ハンドラーが返す `StreamResponse` を ACP の `session/update` 通知（`agentMessageChunk`）に
-  マップして送信する。artifact と message は無条件、statusUpdate はメッセージを伴うときのみ送信し、task は終端検出にのみ使う。
-- **終了**: A2A タスクの終端状態（`completed` / `canceled` / `rejected` / `failed`）を
-  ACP の `StopReason` に変換して `PromptResponse` を返す。
+- **ACP → A2A**: Converts an ACP `PromptRequest` (a list of `ContentBlock`s) into an A2A `Message` and
+  calls the handler's `onMessageSendStream`.
+- **A2A → ACP**: Maps the `StreamResponse` the handler returns onto an ACP `session/update` notification
+  (`agentMessageChunk`) and sends it. Artifacts and messages are sent unconditionally, a statusUpdate is sent only when it carries a message, and a task is used only to detect the terminal state.
+- **Termination**: Converts the A2A task's terminal state (`completed` / `canceled` / `rejected` / `failed`)
+  into an ACP `StopReason` and returns a `PromptResponse`.
 
-### 基本的な使い方
+### Basic usage
 
 ```swift
 import ACPA2ABridge
 import A2AServer
 import ACPAgent
 
-// 1. A2A ハンドラーを用意（AgentExecutor を実装したものを渡す）
+// 1. Prepare an A2A handler (give it your own AgentExecutor implementation)
 let card = AgentCard(
     name: "MyAgent",
     description: "My A2A agent.",
@@ -35,21 +35,21 @@ let card = AgentCard(
 )
 let handler = DefaultRequestHandler(agentCard: card, executor: MyAgentExecutor())
 
-// 2. ACP クライアントと組み合わせてブリッジを作成
+// 2. Combine it with an ACP client to create the bridge
 let bridge = A2AAgentBridge(client: acpClient, handler: handler)
 
-// 3. ACP ホストに渡すだけ — ホスト側は A2A の存在を意識しない
+// 3. Just hand it to an ACP host — the host never knows A2A is there
 let response = try await bridge.prompt(
-    PromptRequest(sessionId: "session-1", prompt: [.text(TextContent(text: "こんにちは"))])
+    PromptRequest(sessionId: "session-1", prompt: [.text(TextContent(text: "Hello"))])
 )
 print(response.stopReason) // .endTurn
 ```
 
-セッション管理（`initialize`・`newSession`・`cancel`）はブリッジが最小実装で提供する。
-`authenticate`・`loadSession` など本ブリッジが対応しないメソッドは `.methodNotFound` エラーを返す。
+Session management (`initialize`, `newSession`, `cancel`) is provided by the bridge as a minimal implementation.
+Methods this bridge does not support, such as `authenticate` and `loadSession`, return a `.methodNotFound` error.
 
 ## Topics
 
-### ブリッジ
+### The bridge
 
 - ``A2AAgentBridge``
