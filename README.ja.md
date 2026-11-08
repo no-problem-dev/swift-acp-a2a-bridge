@@ -60,7 +60,7 @@ _ = try await connection.agent.prompt(promptRequest)
 ## ドキュメント
 
 API リファレンスは
-[GitHub Pages](https://no-problem-dev.github.io/swift-acp-a2a-bridge/documentation/acpa2abridge/) にある。
+DocC カタログ [`Sources/ACPA2ABridge/Documentation.docc`](Sources/ACPA2ABridge/Documentation.docc) にある。
 
 ## 依存関係
 
